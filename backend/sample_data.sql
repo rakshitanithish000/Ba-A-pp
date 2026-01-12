@@ -32,9 +32,14 @@ CREATE TABLE re_owners (
 CREATE TABLE lease_owners (
     id INT AUTO_INCREMENT PRIMARY KEY,
     re_owner_id INT,
+    lease_owner_id_text VARCHAR(50) UNIQUE,
     name VARCHAR(255) NOT NULL,
+    nationality VARCHAR(100),
+    eid_ref VARCHAR(100),
+    expiry_date DATE,
     phone VARCHAR(20),
-    company_name VARCHAR(255),
+    status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    remarks TEXT,
     FOREIGN KEY (re_owner_id) REFERENCES re_owners(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -100,10 +105,10 @@ INSERT INTO re_owners (re_id, name, city, phone, contact_person, status) VALUES
 ('RE002', 'Elite Estates', 'Abu Dhabi', '+971502223344', 'Jane Smith', 'Active');
 
 -- 2. Lease Owners
-INSERT INTO lease_owners (re_owner_id, name, phone, company_name) VALUES 
-(1, 'Ahmed Al-Farsi', '+971504445566', 'Al-Farsi Rentals'),
-(1, 'Sarah Smith', '+971507778899', 'Smith Management'),
-(2, 'Mohammed Rashid', '+971501234567', 'Rashid Property Group');
+INSERT INTO lease_owners (re_owner_id, lease_owner_id_text, name, nationality, eid_ref, expiry_date, phone, status, remarks) VALUES 
+(1, 'TN001', 'Ahmed Al-Farsi', 'Omani', '784-1234-5678901-1', '2026-12-31', '+971504445566', 'Active', 'Al-Farsi Rentals'),
+(1, 'TN002', 'Sarah Smith', 'British', '784-5678-1234567-2', '2027-05-15', '+971507778899', 'Active', 'Smith Management'),
+(2, 'TN003', 'Mohammed Rashid', 'Emirati', '784-9876-5432109-3', '2026-09-20', '+971501234567', 'Active', 'Rashid Property Group');
 
 -- 3. Flats
 INSERT INTO flats (lease_owner_id, flat_number, bhk_type, address) VALUES 

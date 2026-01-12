@@ -17,9 +17,14 @@ CREATE TABLE IF NOT EXISTS re_owners (
 CREATE TABLE IF NOT EXISTS lease_owners (
     id INT AUTO_INCREMENT PRIMARY KEY,
     re_owner_id INT,
+    lease_owner_id_text VARCHAR(50) UNIQUE,
     name VARCHAR(255) NOT NULL,
+    nationality VARCHAR(100),
+    eid_ref VARCHAR(100),
+    expiry_date DATE,
     phone VARCHAR(20),
-    company_name VARCHAR(255),
+    status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    remarks TEXT,
     FOREIGN KEY (re_owner_id) REFERENCES re_owners(id) ON DELETE SET NULL
 );
 

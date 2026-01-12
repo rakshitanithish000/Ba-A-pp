@@ -138,19 +138,29 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> addLeaseOwner({
-    required String name,
-    required String phone,
-    required String company,
     required String reOwnerId,
+    required String leaseOwnerIdText,
+    required String name,
+    required String nationality,
+    required String eidRef,
+    required String expiryDate,
+    required String phone,
+    required String status,
+    required String remarks,
   }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=add_lease_owner'),
         body: {
-          'name': name,
-          'phone': phone,
-          'company_name': company,
           're_owner_id': reOwnerId,
+          'lease_owner_id_text': leaseOwnerIdText,
+          'name': name,
+          'nationality': nationality,
+          'eid_ref': eidRef,
+          'expiry_date': expiryDate,
+          'phone': phone,
+          'status': status,
+          'remarks': remarks,
         },
       );
       return json.decode(response.body);
@@ -161,20 +171,30 @@ class ApiService {
 
   static Future<Map<String, dynamic>> updateLeaseOwner({
     required String id,
-    required String name,
-    required String phone,
-    required String company,
     required String reOwnerId,
+    required String leaseOwnerIdText,
+    required String name,
+    required String nationality,
+    required String eidRef,
+    required String expiryDate,
+    required String phone,
+    required String status,
+    required String remarks,
   }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=update_lease_owner'),
         body: {
           'id': id,
-          'name': name,
-          'phone': phone,
-          'company_name': company,
           're_owner_id': reOwnerId,
+          'lease_owner_id_text': leaseOwnerIdText,
+          'name': name,
+          'nationality': nationality,
+          'eid_ref': eidRef,
+          'expiry_date': expiryDate,
+          'phone': phone,
+          'status': status,
+          'remarks': remarks,
         },
       );
       return json.decode(response.body);

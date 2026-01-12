@@ -12,10 +12,15 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
   List<dynamic> _leaseOwners = [];
   List<dynamic> _reOwners = [];
   bool _isLoading = true;
+  final TextEditingController _leaseOwnerIdController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
+  final TextEditingController _eidRefController = TextEditingController();
+  final TextEditingController _expiryDateController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _companyController = TextEditingController();
+  final TextEditingController _remarksController = TextEditingController();
   String? _selectedREOwnerId;
+  String _selectedStatus = 'Active';
 
   @override
   void initState() {
@@ -45,10 +50,15 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
   }
 
   void _showAddDialog() {
+    _leaseOwnerIdController.clear();
     _nameController.clear();
+    _nationalityController.clear();
+    _eidRefController.clear();
+    _expiryDateController.clear();
     _phoneController.clear();
-    _companyController.clear();
+    _remarksController.clear();
     _selectedREOwnerId = null;
+    _selectedStatus = 'Active';
 
     showDialog(
       context: context,
@@ -71,16 +81,59 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
                   onChanged: (val) => setDialogState(() => _selectedREOwnerId = val),
                 ),
                 TextField(
+                  controller: _leaseOwnerIdController,
+                  decoration: const InputDecoration(labelText: 'Lease Owner ID (e.g. TN001)'),
+                ),
+                TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: const InputDecoration(labelText: 'Lease-owner Name'),
+                ),
+                TextField(
+                  controller: _nationalityController,
+                  decoration: const InputDecoration(labelText: 'Nationality'),
+                ),
+                TextField(
+                  controller: _eidRefController,
+                  decoration: const InputDecoration(labelText: 'EID Ref'),
+                ),
+                TextField(
+                  controller: _expiryDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Expiry Date',
+                    hintText: 'YYYY-MM-DD',
+                  ),
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        _expiryDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                      });
+                    }
+                  },
                 ),
                 TextField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
+                  decoration: const InputDecoration(labelText: 'Contact Number'),
+                ),
+                DropdownButtonFormField<String>(
+                  value: _selectedStatus,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: const [
+                    DropdownMenuItem(value: 'Active', child: Text('Active')),
+                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                  ],
+                  onChanged: (val) => setDialogState(() => _selectedStatus = val!),
                 ),
                 TextField(
-                  controller: _companyController,
-                  decoration: const InputDecoration(labelText: 'Company Name'),
+                  controller: _remarksController,
+                  decoration: const InputDecoration(labelText: 'Remarks'),
+                  maxLines: 2,
                 ),
               ],
             ),
@@ -100,10 +153,15 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
                 }
 
                 final result = await ApiService.addLeaseOwner(
-                  name: _nameController.text,
-                  phone: _phoneController.text,
-                  company: _companyController.text,
                   reOwnerId: _selectedREOwnerId!,
+                  leaseOwnerIdText: _leaseOwnerIdController.text,
+                  name: _nameController.text,
+                  nationality: _nationalityController.text,
+                  eidRef: _eidRefController.text,
+                  expiryDate: _expiryDateController.text,
+                  phone: _phoneController.text,
+                  status: _selectedStatus,
+                  remarks: _remarksController.text,
                 );
 
                 if (result['status'] == 'success') {
@@ -127,10 +185,15 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
   }
 
   void _showEditDialog(Map<String, dynamic> owner) {
+    _leaseOwnerIdController.text = owner['lease_owner_id_text'] ?? '';
     _nameController.text = owner['name'] ?? '';
+    _nationalityController.text = owner['nationality'] ?? '';
+    _eidRefController.text = owner['eid_ref'] ?? '';
+    _expiryDateController.text = owner['expiry_date'] ?? '';
     _phoneController.text = owner['phone'] ?? '';
-    _companyController.text = owner['company_name'] ?? '';
+    _remarksController.text = owner['remarks'] ?? '';
     _selectedREOwnerId = owner['re_owner_id']?.toString();
+    _selectedStatus = owner['status'] ?? 'Active';
 
     showDialog(
       context: context,
@@ -153,16 +216,59 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
                   onChanged: (val) => setDialogState(() => _selectedREOwnerId = val),
                 ),
                 TextField(
+                  controller: _leaseOwnerIdController,
+                  decoration: const InputDecoration(labelText: 'Lease Owner ID (e.g. TN001)'),
+                ),
+                TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: const InputDecoration(labelText: 'Lease-owner Name'),
+                ),
+                TextField(
+                  controller: _nationalityController,
+                  decoration: const InputDecoration(labelText: 'Nationality'),
+                ),
+                TextField(
+                  controller: _eidRefController,
+                  decoration: const InputDecoration(labelText: 'EID Ref'),
+                ),
+                TextField(
+                  controller: _expiryDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Expiry Date',
+                    hintText: 'YYYY-MM-DD',
+                  ),
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        _expiryDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                      });
+                    }
+                  },
                 ),
                 TextField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
+                  decoration: const InputDecoration(labelText: 'Contact Number'),
+                ),
+                DropdownButtonFormField<String>(
+                  value: _selectedStatus,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: const [
+                    DropdownMenuItem(value: 'Active', child: Text('Active')),
+                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                  ],
+                  onChanged: (val) => setDialogState(() => _selectedStatus = val!),
                 ),
                 TextField(
-                  controller: _companyController,
-                  decoration: const InputDecoration(labelText: 'Company Name'),
+                  controller: _remarksController,
+                  decoration: const InputDecoration(labelText: 'Remarks'),
+                  maxLines: 2,
                 ),
               ],
             ),
@@ -183,10 +289,15 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
 
                 final result = await ApiService.updateLeaseOwner(
                   id: owner['id'].toString(),
-                  name: _nameController.text,
-                  phone: _phoneController.text,
-                  company: _companyController.text,
                   reOwnerId: _selectedREOwnerId!,
+                  leaseOwnerIdText: _leaseOwnerIdController.text,
+                  name: _nameController.text,
+                  nationality: _nationalityController.text,
+                  eidRef: _eidRefController.text,
+                  expiryDate: _expiryDateController.text,
+                  phone: _phoneController.text,
+                  status: _selectedStatus,
+                  remarks: _remarksController.text,
                 );
 
                 if (result['status'] == 'success') {
@@ -251,13 +362,18 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
-                    title: Text(owner['name']),
+                    title: Text('${owner['lease_owner_id_text'] ?? ''} - ${owner['name']}'),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text('Nationality: ${owner['nationality'] ?? ''}'),
+                        Text('EID Ref: ${owner['eid_ref'] ?? ''}'),
+                        Text('Expiry: ${owner['expiry_date'] ?? ''}'),
                         Text('Phone: ${owner['phone']}'),
-                        Text('Company: ${owner['company_name']}'),
+                        Text('Status: ${owner['status']}'),
                         Text('RE Owner: ${owner['re_owner_name'] ?? 'N/A'}'),
+                        if (owner['remarks'] != null && owner['remarks'].isNotEmpty)
+                          Text('Remarks: ${owner['remarks']}'),
                       ],
                     ),
                     trailing: Row(

@@ -140,27 +140,48 @@ switch ($action) {
         break;
 
     case 'add_lease_owner':
-        $re_owner_id = $_POST['re_owner_id'] ?? null;
-        $name = $_POST['name'] ?? '';
-        $phone = $_POST['phone'] ?? '';
-        $company_name = $_POST['company_name'] ?? '';
+        try {
+            $re_owner_id = $_POST['re_owner_id'] ?? null;
+            $lease_owner_id_text = $_POST['lease_owner_id_text'] ?? '';
+            $name = $_POST['name'] ?? '';
+            $nationality = $_POST['nationality'] ?? '';
+            $eid_ref = $_POST['eid_ref'] ?? '';
+            $expiry_date = $_POST['expiry_date'] ?? '';
+            if (empty($expiry_date))
+                $expiry_date = null;
+            $phone = $_POST['phone'] ?? '';
+            $status = $_POST['status'] ?? 'Active';
+            $remarks = $_POST['remarks'] ?? '';
 
-        if (empty($name)) {
-            echo json_encode(['status' => 'error', 'message' => 'Name is required']);
-            break;
-        }
+            if (empty($name)) {
+                echo json_encode(['status' => 'error', 'message' => 'Name is required']);
+                break;
+            }
 
-        $stmt = $conn->prepare("INSERT INTO lease_owners (re_owner_id, name, phone, company_name) VALUES (?, ?, ?, ?)");
-        if ($stmt === false) {
-            echo json_encode(['status' => 'error', 'message' => 'Prepare failed: ' . $conn->error]);
-            break;
-        }
-        $stmt->bind_param("isss", $re_owner_id, $name, $phone, $company_name);
+            // Check if lease_owner_id_text already exists
+            if (!empty($lease_owner_id_text)) {
+                $checkStmt = $conn->prepare("SELECT id FROM lease_owners WHERE lease_owner_id_text = ?");
+                $checkStmt->bind_param("s", $lease_owner_id_text);
+                $checkStmt->execute();
+                if ($checkStmt->get_result()->num_rows > 0) {
+                    echo json_encode(['status' => 'error', 'message' => 'This Lease Owner ID already exists. Please use a unique ID.']);
+                    break;
+                }
+            }
 
-        if ($stmt->execute()) {
-            echo json_encode(['status' => 'success', 'message' => 'Lease Owner added successfully', 'id' => $conn->insert_id]);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => $conn->error]);
+            $stmt = $conn->prepare("INSERT INTO lease_owners (re_owner_id, lease_owner_id_text, name, nationality, eid_ref, expiry_date, phone, status, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt === false) {
+                throw new Exception('Prepare failed: ' . $conn->error);
+            }
+            $stmt->bind_param("issssssss", $re_owner_id, $lease_owner_id_text, $name, $nationality, $eid_ref, $expiry_date, $phone, $status, $remarks);
+
+            if ($stmt->execute()) {
+                echo json_encode(['status' => 'success', 'message' => 'Lease Owner added successfully', 'id' => $conn->insert_id]);
+            } else {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         }
         break;
 
@@ -168,20 +189,38 @@ switch ($action) {
         try {
             $id = $_POST['id'] ?? null;
             $re_owner_id = $_POST['re_owner_id'] ?? null;
+            $lease_owner_id_text = $_POST['lease_owner_id_text'] ?? '';
             $name = $_POST['name'] ?? '';
+            $nationality = $_POST['nationality'] ?? '';
+            $eid_ref = $_POST['eid_ref'] ?? '';
+            $expiry_date = $_POST['expiry_date'] ?? '';
+            if (empty($expiry_date))
+                $expiry_date = null;
             $phone = $_POST['phone'] ?? '';
-            $company_name = $_POST['company_name'] ?? '';
+            $status = $_POST['status'] ?? 'Active';
+            $remarks = $_POST['remarks'] ?? '';
 
             if (!$id || empty($name)) {
                 echo json_encode(['status' => 'error', 'message' => 'ID and Name are required']);
                 break;
             }
 
-            $stmt = $conn->prepare("UPDATE lease_owners SET re_owner_id = ?, name = ?, phone = ?, company_name = ? WHERE id = ?");
+            // Check if another record already has this lease_owner_id_text
+            if (!empty($lease_owner_id_text)) {
+                $checkStmt = $conn->prepare("SELECT id FROM lease_owners WHERE lease_owner_id_text = ? AND id != ?");
+                $checkStmt->bind_param("si", $lease_owner_id_text, $id);
+                $checkStmt->execute();
+                if ($checkStmt->get_result()->num_rows > 0) {
+                    echo json_encode(['status' => 'error', 'message' => 'This Lease Owner ID is already assigned to another owner.']);
+                    break;
+                }
+            }
+
+            $stmt = $conn->prepare("UPDATE lease_owners SET re_owner_id = ?, lease_owner_id_text = ?, name = ?, nationality = ?, eid_ref = ?, expiry_date = ?, phone = ?, status = ?, remarks = ? WHERE id = ?");
             if ($stmt === false) {
                 throw new Exception('Prepare failed: ' . $conn->error);
             }
-            $stmt->bind_param("isssi", $re_owner_id, $name, $phone, $company_name, $id);
+            $stmt->bind_param("issssssssi", $re_owner_id, $lease_owner_id_text, $name, $nationality, $eid_ref, $expiry_date, $phone, $status, $remarks, $id);
 
             if ($stmt->execute()) {
                 echo json_encode(['status' => 'success', 'message' => 'Lease Owner updated successfully']);
