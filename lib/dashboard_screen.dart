@@ -64,11 +64,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemCount: _stats.length,
                   itemBuilder: (context, index) {
                     final item = _stats[index];
-                    return _buildStatCard(
-                      item['title'],
-                      item['count'].toString(),
-                      _getIconForTitle(item['title']),
-                      _getColorForTitle(item['title']),
+                    return GestureDetector(
+                      onTap: () {
+                        if (item['title'] == 'RE owners') {
+                          Navigator.pushNamed(context, '/re_owners');
+                        } else if (item['title'] == 'Lease Owners') {
+                          Navigator.pushNamed(context, '/lease_owners');
+                        } else if (item['title'] == 'Flats') {
+                          Navigator.pushNamed(context, '/flats');
+                        } else if (item['title'] == 'Rooms') {
+                          Navigator.pushNamed(context, '/rooms');
+                        } else if (item['title'] == 'Bed-spaces') {
+                          Navigator.pushNamed(context, '/bed_spaces');
+                        } else if (item['title'] == 'Guests') {
+                          Navigator.pushNamed(context, '/guests');
+                        } else if (item['title'] == 'Rental-Records') {
+                          Navigator.pushNamed(context, '/rental_records');
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${item['title']} module coming soon!')),
+                          );
+                        }
+                      },
+                      child: _buildStatCard(
+                        item['title'],
+                        item['count'].toString(),
+                        _getIconForTitle(item['title']),
+                        _getColorForTitle(item['title']),
+                      ),
                     );
                   },
                 ),
