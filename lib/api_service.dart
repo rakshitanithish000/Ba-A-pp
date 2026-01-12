@@ -88,6 +88,46 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateREOwner({
+    required String id,
+    required String reId,
+    required String name,
+    required String city,
+    required String phone,
+    required String contactPerson,
+    required String status,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/manage_owners.php?action=update_re_owner'),
+        body: {
+          'id': id,
+          're_id': reId,
+          'name': name,
+          'city': city,
+          'phone': phone,
+          'contact_person': contactPerson,
+          'status': status,
+        },
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Connection Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteREOwner(String id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/manage_owners.php?action=delete_re_owner'),
+        body: {'id': id},
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Connection Error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> getLeaseOwners() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/api/manage_owners.php?action=get_lease_owners'));

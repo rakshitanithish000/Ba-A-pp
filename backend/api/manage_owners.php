@@ -32,6 +32,17 @@ switch ($action) {
                 break;
             }
 
+            // Check if re_id already exists
+            if (!empty($re_id)) {
+                $checkStmt = $conn->prepare("SELECT id FROM re_owners WHERE re_id = ?");
+                $checkStmt->bind_param("s", $re_id);
+                $checkStmt->execute();
+                if ($checkStmt->get_result()->num_rows > 0) {
+                    echo json_encode(['status' => 'error', 'message' => 'This RE ID already exists. Please use a unique ID.']);
+                    break;
+                }
+            }
+
             $stmt = $conn->prepare("INSERT INTO re_owners (re_id, name, city, phone, contact_person, status) VALUES (?, ?, ?, ?, ?, ?)");
             if ($stmt === false) {
                 throw new Exception('Prepare failed: ' . $conn->error);
@@ -40,6 +51,72 @@ switch ($action) {
 
             if ($stmt->execute()) {
                 echo json_encode(['status' => 'success', 'message' => 'RE Owner added successfully', 'id' => $conn->insert_id]);
+            } else {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'update_re_owner':
+        try {
+            $id = $_POST['id'] ?? null;
+            $re_id = $_POST['re_id'] ?? '';
+            $name = $_POST['name'] ?? '';
+            $city = $_POST['city'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            $contact_person = $_POST['contact_person'] ?? '';
+            $status = $_POST['status'] ?? 'Active';
+
+            if (!$id || empty($name)) {
+                echo json_encode(['status' => 'error', 'message' => 'ID and Name are required']);
+                break;
+            }
+
+            // Check if another record already has this re_id
+            if (!empty($re_id)) {
+                $checkStmt = $conn->prepare("SELECT id FROM re_owners WHERE re_id = ? AND id != ?");
+                $checkStmt->bind_param("si", $re_id, $id);
+                $checkStmt->execute();
+                if ($checkStmt->get_result()->num_rows > 0) {
+                    echo json_encode(['status' => 'error', 'message' => 'This RE ID is already assigned to another owner.']);
+                    break;
+                }
+            }
+
+            $stmt = $conn->prepare("UPDATE re_owners SET re_id = ?, name = ?, city = ?, phone = ?, contact_person = ?, status = ? WHERE id = ?");
+            if ($stmt === false) {
+                throw new Exception('Prepare failed: ' . $conn->error);
+            }
+            $stmt->bind_param("ssssssi", $re_id, $name, $city, $phone, $contact_person, $status, $id);
+
+            if ($stmt->execute()) {
+                echo json_encode(['status' => 'success', 'message' => 'RE Owner updated successfully']);
+            } else {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'delete_re_owner':
+        try {
+            $id = $_POST['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['status' => 'error', 'message' => 'ID is required']);
+                break;
+            }
+
+            $stmt = $conn->prepare("DELETE FROM re_owners WHERE id = ?");
+            if ($stmt === false) {
+                throw new Exception('Prepare failed: ' . $conn->error);
+            }
+            $stmt->bind_param("i", $id);
+
+            if ($stmt->execute()) {
+                echo json_encode(['status' => 'success', 'message' => 'RE Owner deleted successfully']);
             } else {
                 throw new Exception('Execute failed: ' . $stmt->error);
             }
