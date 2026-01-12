@@ -24,22 +24,42 @@ class _FlatsScreenState extends State<FlatsScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    final flatsResult = await ApiService.getFlats();
-    final ownersResult = await ApiService.getLeaseOwners();
+    
+    try {
+      final results = await Future.wait([
+        ApiService.getFlats(),
+        ApiService.getLeaseOwners(),
+      ]);
 
-    if (flatsResult['status'] == 'success' && ownersResult['status'] == 'success') {
+      final flatsResult = results[0];
+      final ownersResult = results[1];
+
       setState(() {
-        _flats = flatsResult['data'];
-        _leaseOwners = ownersResult['data'];
+        if (flatsResult['status'] == 'success') {
+          _flats = flatsResult['data'];
+        } else {
+          _showError('Failed to load flats: ${flatsResult['message']}');
+        }
+
+        if (ownersResult['status'] == 'success') {
+          _leaseOwners = ownersResult['data'];
+        } else {
+          _showError('Failed to load lease owners: ${ownersResult['message']}');
+        }
+        
         _isLoading = false;
       });
-    } else {
+    } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load data')),
-        );
-      }
+      _showError('An error occurred: $e');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 

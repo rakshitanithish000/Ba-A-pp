@@ -24,24 +24,42 @@ class _RentalRecordsScreenState extends State<RentalRecordsScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    final recordsResult = await ApiService.getRentalRecords(guestId: widget.guestId);
     
-    // Fetch all guests for the add payment dialog
-    final guestsResult = await ApiService.getGuests();
+    try {
+      final results = await Future.wait([
+        ApiService.getRentalRecords(guestId: widget.guestId),
+        ApiService.getGuests(),
+      ]);
 
-    if (recordsResult['status'] == 'success' && guestsResult['status'] == 'success') {
+      final recordsResult = results[0];
+      final guestsResult = results[1];
+
       setState(() {
-        _records = recordsResult['data'];
-        _guests = guestsResult['data'];
+        if (recordsResult['status'] == 'success') {
+          _records = recordsResult['data'];
+        } else {
+          _showError('Failed to load rental records: ${recordsResult['message']}');
+        }
+
+        if (guestsResult['status'] == 'success') {
+          _guests = guestsResult['data'];
+        } else {
+          _showError('Failed to load guests: ${guestsResult['message']}');
+        }
+        
         _isLoading = false;
       });
-    } else {
+    } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load data')),
-        );
-      }
+      _showError('An error occurred: $e');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 

@@ -24,27 +24,44 @@ class _GuestsScreenState extends State<GuestsScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    final guestsResult = await ApiService.getGuests(bedSpaceId: widget.bedSpaceId);
     
-    // For the "Add Guest" form, we want to see available beds
-    final bedsResult = await ApiService.getBedSpaces();
+    try {
+      final results = await Future.wait([
+        ApiService.getGuests(bedSpaceId: widget.bedSpaceId),
+        ApiService.getBedSpaces(),
+      ]);
 
-    if (guestsResult['status'] == 'success' && bedsResult['status'] == 'success') {
+      final guestsResult = results[0];
+      final bedsResult = results[1];
+
       setState(() {
-        _guests = guestsResult['data'];
-        // Filter beds to only show "Available" ones for the dropdown
-        _availableBeds = (bedsResult['data'] as List)
-            .where((bed) => bed['status'] == 'Available')
-            .toList();
+        if (guestsResult['status'] == 'success') {
+          _guests = guestsResult['data'];
+        } else {
+          _showError('Failed to load guests: ${guestsResult['message']}');
+        }
+
+        if (bedsResult['status'] == 'success') {
+          _availableBeds = (bedsResult['data'] as List)
+              .where((bed) => bed['status'] == 'Available')
+              .toList();
+        } else {
+          _showError('Failed to load bed-spaces: ${bedsResult['message']}');
+        }
+        
         _isLoading = false;
       });
-    } else {
+    } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load data')),
-        );
-      }
+      _showError('An error occurred: $e');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 

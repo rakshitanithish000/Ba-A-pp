@@ -25,22 +25,42 @@ class _BedSpacesScreenState extends State<BedSpacesScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    final bedsResult = await ApiService.getBedSpaces(roomId: widget.roomId);
-    final roomsResult = await ApiService.getRooms();
+    
+    try {
+      final results = await Future.wait([
+        ApiService.getBedSpaces(roomId: widget.roomId),
+        ApiService.getRooms(),
+      ]);
 
-    if (bedsResult['status'] == 'success' && roomsResult['status'] == 'success') {
+      final bedsResult = results[0];
+      final roomsResult = results[1];
+
       setState(() {
-        _beds = bedsResult['data'];
-        _rooms = roomsResult['data'];
+        if (bedsResult['status'] == 'success') {
+          _beds = bedsResult['data'];
+        } else {
+          _showError('Failed to load bed-spaces: ${bedsResult['message']}');
+        }
+
+        if (roomsResult['status'] == 'success') {
+          _rooms = roomsResult['data'];
+        } else {
+          _showError('Failed to load rooms: ${roomsResult['message']}');
+        }
+        
         _isLoading = false;
       });
-    } else {
+    } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load data')),
-        );
-      }
+      _showError('An error occurred: $e');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 
