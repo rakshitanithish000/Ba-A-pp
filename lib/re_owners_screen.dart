@@ -10,12 +10,41 @@ class REOwnersScreen extends StatefulWidget {
 
 class _REOwnersScreenState extends State<REOwnersScreen> {
   List<dynamic> _owners = [];
+  List<dynamic> _filteredOwners = [];
   bool _isLoading = true;
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchOwners();
+    _searchController.addListener(_filterOwners);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterOwners() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredOwners = _owners.where((owner) {
+        final reId = (owner['re_id'] ?? '').toString().toLowerCase();
+        final name = (owner['name'] ?? '').toString().toLowerCase();
+        final city = (owner['city'] ?? '').toString().toLowerCase();
+        final phone = (owner['phone'] ?? '').toString().toLowerCase();
+        final contactPerson = (owner['contact_person'] ?? '').toString().toLowerCase();
+
+        return reId.contains(query) || 
+               name.contains(query) || 
+               city.contains(query) || 
+               phone.contains(query) ||
+               contactPerson.contains(query);
+      }).toList();
+    });
   }
 
   Future<void> _fetchOwners() async {
@@ -24,8 +53,10 @@ class _REOwnersScreenState extends State<REOwnersScreen> {
     if (result['status'] == 'success') {
       setState(() {
         _owners = result['data'];
+        _filteredOwners = _owners;
         _isLoading = false;
       });
+      _filterOwners(); // Re-apply filter if searching
     } else {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -224,15 +255,55 @@ class _REOwnersScreenState extends State<REOwnersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RE Owners')),
+      appBar: AppBar(
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search ID, Name, City, Phone...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.white70),
+                ),
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              )
+            : const Text('RE Owners'),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _searchController.clear();
+                  _isSearching = false;
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _owners.isEmpty
-              ? const Center(child: Text('No owners found'))
+          : _filteredOwners.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        _owners.isEmpty ? 'No owners found' : 'No matches found',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.builder(
-                  itemCount: _owners.length,
+                  itemCount: _filteredOwners.length,
                   itemBuilder: (context, index) {
-                    final owner = _owners[index];
+                    final owner = _filteredOwners[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Padding(
