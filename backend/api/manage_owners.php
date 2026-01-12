@@ -164,6 +164,59 @@ switch ($action) {
         }
         break;
 
+    case 'update_lease_owner':
+        try {
+            $id = $_POST['id'] ?? null;
+            $re_owner_id = $_POST['re_owner_id'] ?? null;
+            $name = $_POST['name'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            $company_name = $_POST['company_name'] ?? '';
+
+            if (!$id || empty($name)) {
+                echo json_encode(['status' => 'error', 'message' => 'ID and Name are required']);
+                break;
+            }
+
+            $stmt = $conn->prepare("UPDATE lease_owners SET re_owner_id = ?, name = ?, phone = ?, company_name = ? WHERE id = ?");
+            if ($stmt === false) {
+                throw new Exception('Prepare failed: ' . $conn->error);
+            }
+            $stmt->bind_param("isssi", $re_owner_id, $name, $phone, $company_name, $id);
+
+            if ($stmt->execute()) {
+                echo json_encode(['status' => 'success', 'message' => 'Lease Owner updated successfully']);
+            } else {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'delete_lease_owner':
+        try {
+            $id = $_POST['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['status' => 'error', 'message' => 'ID is required']);
+                break;
+            }
+
+            $stmt = $conn->prepare("DELETE FROM lease_owners WHERE id = ?");
+            if ($stmt === false) {
+                throw new Exception('Prepare failed: ' . $conn->error);
+            }
+            $stmt->bind_param("i", $id);
+
+            if ($stmt->execute()) {
+                echo json_encode(['status' => 'success', 'message' => 'Lease Owner deleted successfully']);
+            } else {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        break;
+
     default:
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
         break;

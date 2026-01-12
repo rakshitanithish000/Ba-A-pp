@@ -159,6 +159,42 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateLeaseOwner({
+    required String id,
+    required String name,
+    required String phone,
+    required String company,
+    required String reOwnerId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/manage_owners.php?action=update_lease_owner'),
+        body: {
+          'id': id,
+          'name': name,
+          'phone': phone,
+          'company_name': company,
+          're_owner_id': reOwnerId,
+        },
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': '$e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteLeaseOwner(String id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/manage_owners.php?action=delete_lease_owner'),
+        body: {'id': id},
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': '$e'};
+    }
+  }
+
   // --- NEW: Flats Management ---
 
   static Future<Map<String, dynamic>> getFlats() async {

@@ -12,6 +12,10 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
   List<dynamic> _leaseOwners = [];
   List<dynamic> _reOwners = [];
   bool _isLoading = true;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _companyController = TextEditingController();
+  String? _selectedREOwnerId;
 
   @override
   void initState() {
@@ -21,51 +25,30 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    
-    try {
-      final results = await Future.wait([
-        ApiService.getLeaseOwners(),
-        ApiService.getREOwners(),
-      ]);
+    final leaseResult = await ApiService.getLeaseOwners();
+    final reResult = await ApiService.getREOwners();
 
-      final leaseResult = results[0];
-      final reResult = results[1];
-
+    if (leaseResult['status'] == 'success' && reResult['status'] == 'success') {
       setState(() {
-        if (leaseResult['status'] == 'success') {
-          _leaseOwners = leaseResult['data'];
-        } else {
-          _showError('Failed to load lease owners: ${leaseResult['message']}');
-        }
-
-        if (reResult['status'] == 'success') {
-          _reOwners = reResult['data'];
-          print('Loaded ${_reOwners.length} RE Owners'); // Debug log
-        } else {
-          _showError('Failed to load RE owners: ${reResult['message']}');
-        }
-        
+        _leaseOwners = leaseResult['data'];
+        _reOwners = reResult['data'];
         _isLoading = false;
       });
-    } catch (e) {
+    } else {
       setState(() => _isLoading = false);
-      _showError('An error occurred: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load data')),
+        );
+      }
     }
   }
 
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    }
-  }
-
-  void _showAddLeaseOwnerDialog() {
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final companyController = TextEditingController();
-    String? selectedREOwnerId;
+  void _showAddDialog() {
+    _nameController.clear();
+    _phoneController.clear();
+    _companyController.clear();
+    _selectedREOwnerId = null;
 
     showDialog(
       context: context,
@@ -77,46 +60,63 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedREOwnerId,
-                  hint: const Text('Select RE Owner'),
+                  value: _selectedREOwnerId,
+                  decoration: const InputDecoration(labelText: 'Select RE Owner'),
                   items: _reOwners.map((owner) {
                     return DropdownMenuItem<String>(
                       value: owner['id'].toString(),
                       child: Text(owner['name']),
                     );
                   }).toList(),
-                  onChanged: (value) => setDialogState(() => selectedREOwnerId = value),
-                  decoration: const InputDecoration(labelText: 'RE Owner'),
+                  onChanged: (val) => setDialogState(() => _selectedREOwnerId = val),
                 ),
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-                TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone')),
-                TextField(controller: companyController, decoration: const InputDecoration(labelText: 'Company Name')),
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                TextField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone'),
+                ),
+                TextField(
+                  controller: _companyController,
+                  decoration: const InputDecoration(labelText: 'Company Name'),
+                ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () async {
-                if (selectedREOwnerId == null) {
+                if (_selectedREOwnerId == null || _nameController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select an RE Owner')),
+                    const SnackBar(content: Text('Please fill all required fields')),
                   );
                   return;
                 }
+
                 final result = await ApiService.addLeaseOwner(
-                  name: nameController.text,
-                  phone: phoneController.text,
-                  company: companyController.text,
-                  reOwnerId: selectedREOwnerId!,
+                  name: _nameController.text,
+                  phone: _phoneController.text,
+                  company: _companyController.text,
+                  reOwnerId: _selectedREOwnerId!,
                 );
+
                 if (result['status'] == 'success') {
-                  Navigator.pop(context);
-                  _fetchData();
+                  if (mounted) {
+                    Navigator.pop(context);
+                    _fetchData();
+                  }
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(result['message'])),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result['message'])),
+                  );
+                }
               },
               child: const Text('Add'),
             ),
@@ -126,40 +126,160 @@ class _LeaseOwnersScreenState extends State<LeaseOwnersScreen> {
     );
   }
 
+  void _showEditDialog(Map<String, dynamic> owner) {
+    _nameController.text = owner['name'] ?? '';
+    _phoneController.text = owner['phone'] ?? '';
+    _companyController.text = owner['company_name'] ?? '';
+    _selectedREOwnerId = owner['re_owner_id']?.toString();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Lease Owner'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _selectedREOwnerId,
+                  decoration: const InputDecoration(labelText: 'Select RE Owner'),
+                  items: _reOwners.map((owner) {
+                    return DropdownMenuItem<String>(
+                      value: owner['id'].toString(),
+                      child: Text(owner['name']),
+                    );
+                  }).toList(),
+                  onChanged: (val) => setDialogState(() => _selectedREOwnerId = val),
+                ),
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                TextField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone'),
+                ),
+                TextField(
+                  controller: _companyController,
+                  decoration: const InputDecoration(labelText: 'Company Name'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_selectedREOwnerId == null || _nameController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please fill all required fields')),
+                  );
+                  return;
+                }
+
+                final result = await ApiService.updateLeaseOwner(
+                  id: owner['id'].toString(),
+                  name: _nameController.text,
+                  phone: _phoneController.text,
+                  company: _companyController.text,
+                  reOwnerId: _selectedREOwnerId!,
+                );
+
+                if (result['status'] == 'success') {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    _fetchData();
+                  }
+                }
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result['message'])),
+                  );
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _deleteOwner(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Lease Owner'),
+        content: const Text('Are you sure you want to delete this lease owner?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final result = await ApiService.deleteLeaseOwner(id);
+      if (result['status'] == 'success') {
+        _fetchData();
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'])),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Lease Owners')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _leaseOwners.isEmpty
-              ? const Center(child: Text('No lease owners found'))
-              : ListView.builder(
-                  itemCount: _leaseOwners.length,
-                  itemBuilder: (context, index) {
-                    final owner = _leaseOwners[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.green.shade100,
-                          child: const Icon(Icons.vpn_key, color: Colors.green),
+          : ListView.builder(
+              itemCount: _leaseOwners.length,
+              itemBuilder: (context, index) {
+                final owner = _leaseOwners[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    title: Text(owner['name']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Phone: ${owner['phone']}'),
+                        Text('Company: ${owner['company_name']}'),
+                        Text('RE Owner: ${owner['re_owner_name'] ?? 'N/A'}'),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showEditDialog(owner),
                         ),
-                        title: Text(owner['name']),
-                        subtitle: Text(
-                          'Company: ${owner['company_name']}\n'
-                          'Leased From: ${owner['re_owner_name'] ?? 'N/A'}\n'
-                          'Phone: ${owner['phone']}',
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteOwner(owner['id'].toString()),
                         ),
-                        isThreeLine: true,
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddLeaseOwnerDialog,
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: _showAddDialog,
+        child: const Icon(Icons.add),
       ),
     );
   }
