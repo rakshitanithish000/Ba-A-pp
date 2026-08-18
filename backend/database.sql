@@ -78,3 +78,11 @@ CREATE TABLE IF NOT EXISTS rental_records (
     payment_status ENUM('Paid', 'Partial', 'Pending') DEFAULT 'Paid',
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE CASCADE
 );
+
+-- 8. Admin Users (for authentication)
+CREATE TABLE IF NOT EXISTS admin_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
