@@ -1,4 +1,10 @@
 <?php
+// Include authentication check
+require_once 'auth_check.php';
+
+// Require authentication for dashboard stats
+require_authentication();
+
 require_once 'db_config.php';
 
 header('Content-Type: application/json');
