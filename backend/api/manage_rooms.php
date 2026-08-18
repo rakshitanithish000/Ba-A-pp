@@ -1,11 +1,14 @@
 <?php
 include_once "../db_config.php";
+include_once "../auth.php";
 header('Content-Type: application/json');
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 switch ($action) {
     case 'get_rooms':
+        // Require authentication for reading room data
+        requireAuth();
         $flat_id = $_GET['flat_id'] ?? null;
         if ($flat_id) {
             $sql = "SELECT r.*, f.flat_number FROM rooms r 
@@ -34,6 +37,8 @@ switch ($action) {
         break;
 
     case 'add_room':
+        // Require authentication for creating rooms
+        requireAuth();
         $flat_id = $_POST['flat_id'] ?? null;
         $room_number = $_POST['room_number'] ?? '';
         $max_occupancy = $_POST['max_occupancy'] ?? 1;

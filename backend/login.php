@@ -1,5 +1,6 @@
 <?php
 require_once 'db_config.php';
+require_once 'auth.php';
 
 header('Content-Type: application/json');
 
@@ -11,7 +12,7 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, password FROM admin_users WHERE username = ?");
+$stmt = $conn->prepare("SELECT id, username, password FROM admin_users WHERE username = ?");
 $stmt->bind_param("s", $username);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -19,10 +20,14 @@ $result = $stmt->get_result();
 if ($result->num_rows === 1) {
     $user = $result->fetch_assoc();
     if (password_verify($password, $user['password'])) {
+        // Set authentication session
+        setAuthSession($user['id'], $user['username']);
+        
         echo json_encode([
             "status" => "success",
             "message" => "Login successful",
-            "user_id" => $user['id']
+            "user_id" => $user['id'],
+            "username" => $user['username']
         ]);
     } else {
         echo json_encode(["status" => "error", "message" => "Invalid password"]);

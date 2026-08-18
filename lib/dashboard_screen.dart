@@ -44,7 +44,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+            onPressed: () {
+              ApiService.clearSession();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
           ),
         ],
       ),
