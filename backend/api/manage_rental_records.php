@@ -1,4 +1,7 @@
 <?php
+// Include authentication check - must be authenticated to access this API
+require_once "../auth_check.php";
+
 include_once "../db_config.php";
 header('Content-Type: application/json');
 
