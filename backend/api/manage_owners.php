@@ -1,4 +1,7 @@
 <?php
+// Include authentication check - this will exit if user is not authenticated
+require_once "../auth_check.php";
+
 // Include the database configuration from the parent folder
 include_once "../db_config.php";
 
