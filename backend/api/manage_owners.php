@@ -1,4 +1,10 @@
 <?php
+// Include authentication check
+require_once "../auth_check.php";
+
+// Require authentication for all operations in this API
+require_authentication();
+
 // Include the database configuration from the parent folder
 include_once "../db_config.php";
 
