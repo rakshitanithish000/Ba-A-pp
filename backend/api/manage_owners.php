@@ -1,4 +1,7 @@
 <?php
+// Include authentication check - must be authenticated to access this API
+require_once "../auth_check.php";
+
 // Include the database configuration from the parent folder
 include_once "../db_config.php";
 
