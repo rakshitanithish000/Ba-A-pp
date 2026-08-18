@@ -143,3 +143,7 @@ INSERT INTO guests (bed_space_id, name, phone, id_proof_number, check_in_date) V
 INSERT INTO rental_records (guest_id, amount_paid, payment_date, payment_month, payment_status) VALUES 
 (1, 1500.00, '2025-12-05', 'December 2025', 'Paid'),
 (2, 800.00, '2026-01-07', 'January 2026', 'Paid');
+
+-- 8. Admin Users (default password: admin123)
+INSERT INTO admin_users (username, password) VALUES 
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
