@@ -1,5 +1,10 @@
 <?php
 include_once "../db_config.php";
+include_once "../auth_helper.php";
+
+// Require authentication for all flat management operations
+require_authentication();
+
 header('Content-Type: application/json');
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';

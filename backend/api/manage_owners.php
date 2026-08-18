@@ -1,6 +1,10 @@
 <?php
 // Include the database configuration from the parent folder
 include_once "../db_config.php";
+include_once "../auth_helper.php";
+
+// Require authentication for all owner management operations
+require_authentication();
 
 // Set response type to JSON
 header('Content-Type: application/json');
