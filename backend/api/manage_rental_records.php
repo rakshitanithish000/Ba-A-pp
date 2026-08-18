@@ -1,11 +1,15 @@
 <?php
 include_once "../db_config.php";
+include_once "../auth.php";
 header('Content-Type: application/json');
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 switch ($action) {
     case 'get_rental_records':
+        // Require authentication for reading rental records
+        requireAuth();
+        
         $guest_id = $_GET['guest_id'] ?? null;
         if ($guest_id) {
             $sql = "SELECT rr.*, g.name as guest_name, b.bed_name, r.room_number, f.flat_number 
@@ -42,6 +46,9 @@ switch ($action) {
         break;
 
     case 'add_rental_record':
+        // Require authentication for creating rental records
+        requireAuth();
+        
         $guest_id = $_POST['guest_id'] ?? null;
         $amount_paid = $_POST['amount_paid'] ?? 0;
         $payment_date = $_POST['payment_date'] ?? date('Y-m-d');

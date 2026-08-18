@@ -1,7 +1,11 @@
 <?php
 require_once 'db_config.php';
+require_once 'auth.php';
 
 header('Content-Type: application/json');
+
+// Require authentication for viewing dashboard statistics
+requireAuth();
 
 $stats = [];
 

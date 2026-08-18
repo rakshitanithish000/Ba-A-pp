@@ -1,11 +1,14 @@
 <?php
 include_once "../db_config.php";
+include_once "../auth.php";
 header('Content-Type: application/json');
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 switch ($action) {
     case 'get_flats':
+        // Require authentication for reading flat data
+        requireAuth();
         $sql = "SELECT f.*, l.name as lease_owner_name 
                 FROM flats f 
                 LEFT JOIN lease_owners l ON f.lease_owner_id = l.id 
@@ -19,6 +22,8 @@ switch ($action) {
         break;
 
     case 'add_flat':
+        // Require authentication for creating flats
+        requireAuth();
         $lease_owner_id = $_POST['lease_owner_id'] ?? null;
         $flat_number = $_POST['flat_number'] ?? '';
         $bhk_type = $_POST['bhk_type'] ?? '1BHK';

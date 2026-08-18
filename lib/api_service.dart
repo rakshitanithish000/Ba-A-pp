@@ -4,6 +4,42 @@ import 'package:http/http.dart' as http;
 class ApiService {
   // Replace with your Hostinger domain URL
   static const String baseUrl = 'https://app.efficientgroupdubai.com';
+  
+  // Store session cookie
+  static String? _sessionCookie;
+
+  // Helper method to get headers with session cookie
+  static Map<String, String> _getHeaders() {
+    final headers = <String, String>{};
+    if (_sessionCookie != null) {
+      headers['Cookie'] = _sessionCookie!;
+    }
+    return headers;
+  }
+
+  // Helper method to extract and store session cookie from response
+  static void _extractSessionCookie(http.Response response) {
+    final setCookie = response.headers['set-cookie'];
+    if (setCookie != null) {
+      // Extract the session cookie (PHPSESSID)
+      final cookies = setCookie.split(';');
+      for (var cookie in cookies) {
+        if (cookie.trim().startsWith('PHPSESSID=')) {
+          _sessionCookie = cookie.trim();
+          break;
+        }
+      }
+      // If PHPSESSID not found, store the first cookie
+      if (_sessionCookie == null && cookies.isNotEmpty) {
+        _sessionCookie = cookies[0].trim();
+      }
+    }
+  }
+
+  // Clear session (for logout)
+  static void clearSession() {
+    _sessionCookie = null;
+  }
 
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {
@@ -16,6 +52,8 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
+        // Extract and store session cookie
+        _extractSessionCookie(response);
         return json.decode(response.body);
       } else {
         return {'status': 'error', 'message': 'Server error: ${response.statusCode}'};
@@ -27,7 +65,10 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getStats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/get_dashboard_stats.php'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/get_dashboard_stats.php'),
+        headers: _getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -43,7 +84,10 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getREOwners() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/manage_owners.php?action=get_re_owners'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/manage_owners.php?action=get_re_owners'),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -61,6 +105,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=add_re_owner'),
+        headers: _getHeaders(),
         body: {
             're_id': reId,
             'name': name,
@@ -100,6 +145,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=update_re_owner'),
+        headers: _getHeaders(),
         body: {
           'id': id,
           're_id': reId,
@@ -120,6 +166,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=delete_re_owner'),
+        headers: _getHeaders(),
         body: {'id': id},
       );
       return json.decode(response.body);
@@ -130,7 +177,10 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getLeaseOwners() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/manage_owners.php?action=get_lease_owners'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/manage_owners.php?action=get_lease_owners'),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -151,6 +201,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=add_lease_owner'),
+        headers: _getHeaders(),
         body: {
           're_owner_id': reOwnerId,
           'lease_owner_id_text': leaseOwnerIdText,
@@ -184,6 +235,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=update_lease_owner'),
+        headers: _getHeaders(),
         body: {
           'id': id,
           're_owner_id': reOwnerId,
@@ -207,6 +259,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_owners.php?action=delete_lease_owner'),
+        headers: _getHeaders(),
         body: {'id': id},
       );
       return json.decode(response.body);
@@ -219,7 +272,10 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getFlats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/manage_flats.php?action=get_flats'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/manage_flats.php?action=get_flats'),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -235,6 +291,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_flats.php?action=add_flat'),
+        headers: _getHeaders(),
         body: {
           'flat_number': flatNumber,
           'bhk_type': bhkType,
@@ -255,7 +312,10 @@ class ApiService {
       final url = flatId != null 
           ? '$baseUrl/api/manage_rooms.php?action=get_rooms&flat_id=$flatId'
           : '$baseUrl/api/manage_rooms.php?action=get_rooms';
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -270,6 +330,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_rooms.php?action=add_room'),
+        headers: _getHeaders(),
         body: {
           'room_number': roomNumber,
           'max_occupancy': maxOccupancy,
@@ -289,7 +350,10 @@ class ApiService {
       final url = roomId != null 
           ? '$baseUrl/api/manage_bed_spaces.php?action=get_bed_spaces&room_id=$roomId'
           : '$baseUrl/api/manage_bed_spaces.php?action=get_bed_spaces';
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -305,6 +369,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_bed_spaces.php?action=add_bed_space'),
+        headers: _getHeaders(),
         body: {
           'bed_name': bedName,
           'monthly_rent': monthlyRent,
@@ -325,7 +390,10 @@ class ApiService {
       final url = bedSpaceId != null 
           ? '$baseUrl/api/manage_guests.php?action=get_guests&bed_space_id=$bedSpaceId'
           : '$baseUrl/api/manage_guests.php?action=get_guests';
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -342,6 +410,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_guests.php?action=add_guest'),
+        headers: _getHeaders(),
         body: {
           'name': name,
           'phone': phone,
@@ -363,7 +432,10 @@ class ApiService {
       final url = guestId != null 
           ? '$baseUrl/api/manage_rental_records.php?action=get_rental_records&guest_id=$guestId'
           : '$baseUrl/api/manage_rental_records.php?action=get_rental_records';
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _getHeaders(),
+      );
       return json.decode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': '$e'};
@@ -380,6 +452,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/manage_rental_records.php?action=add_rental_record'),
+        headers: _getHeaders(),
         body: {
           'guest_id': guestId,
           'amount_paid': amountPaid,

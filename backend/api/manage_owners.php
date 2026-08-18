@@ -1,6 +1,7 @@
 <?php
 // Include the database configuration from the parent folder
 include_once "../db_config.php";
+include_once "../auth.php";
 
 // Set response type to JSON
 header('Content-Type: application/json');
@@ -9,6 +10,8 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 switch ($action) {
     case 'get_re_owners':
+        // Require authentication for reading owner data
+        requireAuth();
         // Select strictly the columns from the Excel schema + the primary key
         $result = $conn->query("SELECT id, re_id, name, city, phone, contact_person, status FROM re_owners ORDER BY id DESC");
         $owners = [];
@@ -19,6 +22,8 @@ switch ($action) {
         break;
 
     case 'add_re_owner':
+        // Require authentication for creating RE owners
+        requireAuth();
         try {
             $re_id = $_POST['re_id'] ?? '';
             $name = $_POST['name'] ?? '';
@@ -60,6 +65,8 @@ switch ($action) {
         break;
 
     case 'update_re_owner':
+        // Require authentication for updating RE owners
+        requireAuth();
         try {
             $id = $_POST['id'] ?? null;
             $re_id = $_POST['re_id'] ?? '';
@@ -102,6 +109,8 @@ switch ($action) {
         break;
 
     case 'delete_re_owner':
+        // Require authentication for deleting RE owners
+        requireAuth();
         try {
             $id = $_POST['id'] ?? null;
             if (!$id) {
@@ -126,6 +135,8 @@ switch ($action) {
         break;
 
     case 'get_lease_owners':
+        // Require authentication for reading lease owner data
+        requireAuth();
         // We join with re_owners to show who they lease from
         $sql = "SELECT l.*, r.name as re_owner_name 
                 FROM lease_owners l 
@@ -140,6 +151,8 @@ switch ($action) {
         break;
 
     case 'add_lease_owner':
+        // Require authentication for creating lease owners
+        requireAuth();
         try {
             $re_owner_id = $_POST['re_owner_id'] ?? null;
             $lease_owner_id_text = $_POST['lease_owner_id_text'] ?? '';
@@ -186,6 +199,8 @@ switch ($action) {
         break;
 
     case 'update_lease_owner':
+        // Require authentication for updating lease owners
+        requireAuth();
         try {
             $id = $_POST['id'] ?? null;
             $re_owner_id = $_POST['re_owner_id'] ?? null;
@@ -233,6 +248,8 @@ switch ($action) {
         break;
 
     case 'delete_lease_owner':
+        // Require authentication for deleting lease owners
+        requireAuth();
         try {
             $id = $_POST['id'] ?? null;
             if (!$id) {
