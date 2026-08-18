@@ -1,4 +1,7 @@
 <?php
+// Include authentication check - this will exit if user is not authenticated
+require_once "../auth_check.php";
+
 include_once "../db_config.php";
 header('Content-Type: application/json');
 
